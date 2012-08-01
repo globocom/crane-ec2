@@ -1,6 +1,6 @@
-crane-ec2 is part of tsuru PaaS.
+crane-ec2 is part of `tsuru PaaS <http://github.com/timeredbull/tsuru>`_.
 
-It's build to help service deployers to develop it's service api.
+It is built to help service deployers to develop it's service api.
 
 
 More docs coming.
