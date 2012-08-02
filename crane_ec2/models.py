@@ -31,7 +31,6 @@ class Client(object):
                 security_groups=["default"],
             )
             instance.ec2_id = reservation.instances[0].id
-            instance.save()
             return True
         except EC2ResponseError:
             # TODO (fsouza): skip this silenciator pattern, log the error! ;)
@@ -51,6 +50,5 @@ class Client(object):
         if ec2_instance.ip_address != ec2_instance.private_ip_address:
             instance.state = ec2_instance.state
             instance.host = ec2_instance.ip_address
-            instance.save()
             return True
         return False

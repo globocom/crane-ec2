@@ -23,8 +23,8 @@ class Instance(object):
     pk = None
     state = "running"
     host = "10.10.10.10"
-    saved = None
-    deleted = None
+    saved = False
+    deleted = False
 
     def __init__(self, name=None, ec2_id=None, **kwargs):
         self.name = name
@@ -32,9 +32,6 @@ class Instance(object):
         self.pk = 1
         for k, v in kwargs:
             setattr(self, k, v)
-
-    def save(self):
-        self.saved = True
 
     def delete(self):
         self.deleted = True
@@ -65,13 +62,14 @@ class EC2ClientTestCase(unittest.TestCase):
         self.assertIsInstance(conn, mocks.FakeEC2Conn)
         mocker.verify()
 
-    def test_run_creates_instance_with_data_from_settings_and_save_it_in_the_database(self):
+    def test_run_creates_instance_with_data_from_settings_without_saving_it_in_the_database(self):
         instance = Instance(name="professor_xavier")
         client = Client()
         client._ec2_conn = mocks.FakeEC2Conn()
         ran = client.run(instance)
         self.assertTrue(ran)
-        self.assertTrue(instance.saved)
+        self.assertEqual("i-00000302", instance.ec2_id)
+        self.assertFalse(instance.saved)
 
     def test_run_returns_False_and_does_not_save_the_instance_in_the_database_if_it_fails_to_boot(self):
         instance = Instance(name="far_cry")
@@ -79,6 +77,7 @@ class EC2ClientTestCase(unittest.TestCase):
         client._ec2_conn = mocks.FailingEC2Conn()
         ran = client.run(instance)
         self.assertFalse(ran)
+        self.assertIsNone(instance.ec2_id)
 
     def test_terminate_removes_instance_from_database(self):
         instance = Instance(name="professor_xavier")
@@ -86,7 +85,6 @@ class EC2ClientTestCase(unittest.TestCase):
         client._ec2_conn = mocks.FakeEC2Conn()
         ran = client.run(instance)
         self.assertTrue(ran)
-
         client.terminate(instance)
         self.assertTrue(instance.deleted)
 
@@ -120,7 +118,6 @@ class EC2ClientTestCase(unittest.TestCase):
         client._ec2_conn = mocks.FakeEC2Conn(times_to_fail=0)
         changed = client.get(instance)
         self.assertTrue(changed)
-        self.assertTrue(instance.save)
         self.assertEqual("running", instance.state)
         self.assertEqual("10.10.10.10", instance.host)
 
