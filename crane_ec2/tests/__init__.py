@@ -33,9 +33,6 @@ class Instance(object):
         for k, v in kwargs:
             setattr(self, k, v)
 
-    def delete(self):
-        self.deleted = True
-
 
 class EC2ClientTestCase(unittest.TestCase):
 
@@ -79,15 +76,6 @@ class EC2ClientTestCase(unittest.TestCase):
         self.assertFalse(ran)
         self.assertIsNone(instance.ec2_id)
 
-    def test_terminate_removes_instance_from_database(self):
-        instance = Instance(name="professor_xavier")
-        client = Client()
-        client._ec2_conn = mocks.FakeEC2Conn()
-        ran = client.run(instance)
-        self.assertTrue(ran)
-        client.terminate(instance)
-        self.assertTrue(instance.deleted)
-
     def test_terminate_removes_ec2_instance(self):
         instance = Instance(name="professor_xavier")
         client = Client()
@@ -99,18 +87,15 @@ class EC2ClientTestCase(unittest.TestCase):
         self.assertEqual(["i-00000302"], client._ec2_conn.terminated)
         self.assertTrue(ran)
 
-    def test_terminate_returns_false_and_doesnt_removes_from_db_when_cannot_remove_ec2_instance(self):
+    def test_terminate_returns_false_when_cannot_remove_ec2_instance(self):
         instance = Instance(name="professor_xavier")
         client = Client()
         client._ec2_conn = mocks.FakeEC2Conn()
-
         ran = client.run(instance)
         self.assertTrue(ran)
-
         client._ec2_conn = mocks.FailingEC2Conn()
         ran = client.terminate(instance)
         self.assertFalse(ran)
-        self.assertFalse(instance.deleted)
 
     def test_get_instance_should_set_instance_state_and_ip_when_its_ready_and_return_True_if_its_ok(self):
         instance = Instance(name="good_news_first", ec2_id="i-00000302")

@@ -40,7 +40,6 @@ class Client(object):
         terminated = self.ec2_conn.terminate_instances(
                                 instance_ids=[instance.ec2_id])
         if instance.ec2_id in [inst.id for inst in terminated]:
-            instance.delete()
             return True
         return False
 
