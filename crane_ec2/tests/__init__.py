@@ -4,8 +4,8 @@ from boto.ec2.regioninfo import RegionInfo
 from django.conf import settings
 from mocker import Mocker
 
-from ec2 import Client
-from ec2.tests import mocks
+from crane_ec2 import Client
+from crane_ec2.tests import mocks
 
 
 class FakeManager(object):
