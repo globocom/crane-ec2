@@ -1,8 +1,7 @@
-import unittest
+import mocker
 
 from boto.ec2.regioninfo import RegionInfo
 from django.conf import settings
-from mocker import Mocker
 
 from crane_ec2 import Client
 from crane_ec2.tests import mocks
@@ -34,16 +33,18 @@ class Instance(object):
             setattr(self, k, v)
 
 
-class EC2ClientTestCase(unittest.TestCase):
+class EC2ClientTestCase(mocker.MockerTestCase):
+
+    def tearDown(self):
+        self.mocker.reset()
 
     def test_ec2_conn_connects_to_ec2_using_data_from_settings_when_not_connected(self):
         fake = mocks.FakeEC2Conn()
-        mocker = Mocker()
         r = RegionInfo()
-        regioninfo = mocker.replace("boto.ec2.regioninfo.RegionInfo")
+        regioninfo = self.mocker.replace("boto.ec2.regioninfo.RegionInfo")
         regioninfo(endpoint=settings.EC2_ENDPOINT)
-        mocker.result(r)
-        connect_ec2 = mocker.replace("boto.connect_ec2")
+        self.mocker.result(r)
+        connect_ec2 = self.mocker.replace("boto.connect_ec2")
         connect_ec2(
             aws_access_key_id=settings.EC2_ACCESS_KEY,
             aws_secret_access_key=settings.EC2_SECRET_KEY,
@@ -52,12 +53,12 @@ class EC2ClientTestCase(unittest.TestCase):
             port=int(settings.EC2_PORT),
             path=settings.EC2_PATH,
         )
-        mocker.result(fake)
-        mocker.replay()
+        self.mocker.result(fake)
+        self.mocker.replay()
         client = Client()
         conn = client.ec2_conn
         self.assertIsInstance(conn, mocks.FakeEC2Conn)
-        mocker.verify()
+        self.mocker.verify()
 
     def test_run_creates_instance_with_data_from_settings_without_saving_it_in_the_database(self):
         instance = Instance(name="professor_xavier")
@@ -75,6 +76,17 @@ class EC2ClientTestCase(unittest.TestCase):
         ran = client.run(instance)
         self.assertFalse(ran)
         self.assertIsNone(instance.ec2_id)
+
+    def test_run_loggs_the_exception_if_it_fails_to_start_the_machine(self):
+        err = self.mocker.replace("logging.error")
+        err("500 - Failed")
+        self.mocker.result(None)
+        self.mocker.replay()
+        instance = Instance(name="far_cry")
+        client = Client()
+        client._ec2_conn = mocks.FailingEC2Conn()
+        client.run(instance)
+        self.mocker.verify()
 
     def test_terminate_removes_ec2_instance(self):
         instance = Instance(name="professor_xavier")
@@ -96,6 +108,17 @@ class EC2ClientTestCase(unittest.TestCase):
         client._ec2_conn = mocks.FailingEC2Conn()
         ran = client.terminate(instance)
         self.assertFalse(ran)
+
+    def test_terminate_loggs_the_exception_if_it_fails_to_terminate_the_machine(self):
+        instance = Instance(name="daniel_gildenlow")
+        err = self.mocker.replace("logging.error")
+        err("Failed to terminate the machine.")
+        self.mocker.result(None)
+        self.mocker.replay()
+        client = Client()
+        client._ec2_conn = mocks.FailingEC2Conn()
+        client.terminate(instance)
+        self.mocker.verify()
 
     def test_get_instance_should_set_instance_state_and_ip_when_its_ready_and_return_True_if_its_ok(self):
         instance = Instance(name="good_news_first", ec2_id="i-00000302")

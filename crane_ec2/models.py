@@ -1,3 +1,5 @@
+import logging
+
 import boto
 
 from boto.ec2.regioninfo import RegionInfo
@@ -32,8 +34,8 @@ class Client(object):
             )
             instance.ec2_id = reservation.instances[0].id
             return True
-        except EC2ResponseError:
-            # TODO (fsouza): skip this silenciator pattern, log the error! ;)
+        except EC2ResponseError as exc:
+            logging.error("%s - %s" % (exc.status, exc.reason))
             return False
 
     def terminate(self, instance):
@@ -41,6 +43,7 @@ class Client(object):
                                 instance_ids=[instance.ec2_id])
         if instance.ec2_id in [inst.id for inst in terminated]:
             return True
+        logging.error("Failed to terminate the machine.")
         return False
 
     def get(self, instance):
