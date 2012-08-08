@@ -18,7 +18,7 @@ class Client(object):
                 aws_secret_access_key=settings.EC2_SECRET_KEY,
                 region=RegionInfo(endpoint=settings.EC2_ENDPOINT),
                 is_secure=False,
-                port=settings.EC2_PORT,
+                port=int(settings.EC2_PORT),
                 path=settings.EC2_PATH,
             )
         return self._ec2_conn

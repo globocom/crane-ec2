@@ -155,7 +155,7 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 
 # ec2 settings
 EC2_ENDPOINT = 'your-host'
-EC2_PORT = 6667
+EC2_PORT = '6667'
 EC2_PATH = '/euca/Claudi'
 EC2_ACCESS_KEY = 'access-key'
 EC2_SECRET_KEY = 'very-secret'

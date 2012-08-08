@@ -49,7 +49,7 @@ class EC2ClientTestCase(unittest.TestCase):
             aws_secret_access_key=settings.EC2_SECRET_KEY,
             region=r,
             is_secure=False,
-            port=settings.EC2_PORT,
+            port=int(settings.EC2_PORT),
             path=settings.EC2_PATH,
         )
         mocker.result(fake)
