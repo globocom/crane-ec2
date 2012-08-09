@@ -69,3 +69,6 @@ class FailingEC2Conn(FakeEC2Conn):
 
     def terminate_instances(self, instance_ids):
         return []
+
+    def get_all_instances(self, *args, **kwargs):
+        return []

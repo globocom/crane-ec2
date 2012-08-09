@@ -1,6 +1,7 @@
 import mocker
 
 from boto.ec2.regioninfo import RegionInfo
+from boto.exception import EC2ResponseError
 from django.conf import settings
 
 from crane_ec2 import Client
@@ -135,3 +136,41 @@ class EC2ClientTestCase(mocker.MockerTestCase):
         client._ec2_conn = mocks.FakeEC2Conn(times_to_fail=1)
         changed = client.get(instance)
         self.assertFalse(changed)
+
+    def test_get_instance_should_log_instance_not_found_if_instance_is_not_found(self):
+        instance = Instance(name="good_news_first", ec2_id="i-00000302")
+        err = self.mocker.replace("logging.error")
+        err("Instance %s not found." % instance.ec2_id)
+        self.mocker.result(None)
+        self.mocker.replay()
+        client = Client()
+        client._ec2_conn = mocks.FailingEC2Conn()
+        changed = client.get(instance)
+        self.assertFalse(changed)
+        self.mocker.verify()
+
+    def test_get_instance_should_log_instance_not_found_with_exception_in_case_of_any_exception(self):
+        def fail_to_get(*args, **kwargs):
+            raise EC2ResponseError(status=400, reason="What???")
+        instance = Instance(name="good_news_first", ec2_id="i-00000302")
+        err = self.mocker.replace("logging.error")
+        err("Error getting instance i-00000302: 400 - What???")
+        self.mocker.result(None)
+        self.mocker.replay()
+        client = Client()
+        client._ec2_conn = mocks.FailingEC2Conn()
+        client._ec2_conn.get_all_instances = fail_to_get
+        changed = client.get(instance)
+        self.assertFalse(changed)
+        self.mocker.verify()
+
+    def test_get_instance_should_log_instance_not_running_yet_with_notice(self):
+        instance = Instance(name="good_news_first", ec2_id="i-00000302")
+        info = self.mocker.replace("logging.info")
+        info("Instance not updated. State: running, IP: 172.16.52.10.")
+        self.mocker.result(None)
+        self.mocker.replay()
+        client = Client()
+        client._ec2_conn = mocks.FakeEC2Conn(times_to_fail=1)
+        client.get(instance)
+        self.mocker.verify()
