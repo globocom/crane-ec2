@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 README = open('README.rst').read()
 
 setup(name="crane-ec2",
-      version="0.1.6",
+      version="0.1.7",
       description="helper library to service related api actions in ec2 ",
       long_description=README,
       author="timeredbull",
