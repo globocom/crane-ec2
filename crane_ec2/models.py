@@ -48,13 +48,13 @@ class Client(object):
 
     def get(self, instance):
         try:
-            reservation = self.ec2_conn.get_all_instances(instance.ec2_id)
+            reservation = self.ec2_conn.get_all_instances(instance_ids=[instance.ec2_id])
         except EC2ResponseError as exc:
             logging.error("Error getting instance %s: %s - %s" % (instance.ec2_id, exc.status, exc.reason))
             return False
         if reservation and reservation[0].instances:
             ec2_instance = reservation[0].instances[0]
-            if ec2_instance.ip_address != ec2_instance.private_ip_address:
+            if ec2_instance.id == instance.ec2_id and ec2_instance.ip_address != ec2_instance.private_ip_address:
                 instance.state = ec2_instance.state
                 instance.host = ec2_instance.ip_address
                 return True

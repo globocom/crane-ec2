@@ -55,11 +55,11 @@ class FakeEC2Conn(object):
             instances.append(instance)
         return instances
 
-    def get_all_instances(self, ids, *args, **kwargs):
+    def get_all_instances(self, instance_ids, *args, **kwargs):
         if self.fails < self.times_to_fail:
             self.fails += 1
-            return build_pending_reservations(ids[0])
-        return build_running_reservations(ids[0])
+            return build_pending_reservations(instance_ids[0])
+        return build_running_reservations(instance_ids[0])
 
 
 class FailingEC2Conn(FakeEC2Conn):
