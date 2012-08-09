@@ -23,6 +23,7 @@ class Instance(object):
     pk = None
     state = "running"
     host = "10.10.10.10"
+    port = "22"
     saved = False
     deleted = False
 
@@ -173,4 +174,49 @@ class EC2ClientTestCase(mocker.MockerTestCase):
         client = Client()
         client._ec2_conn = mocks.FakeEC2Conn(times_to_fail=1)
         client.get(instance)
+        self.mocker.verify()
+
+    def test_authorize_should_use_ec2_conn_to_authorize_access_to_the_instance(self):
+        fake = mocks.FakeEC2Conn()
+        instance = Instance(name="tides_of_time", ec2_id="i-021")
+        client = Client()
+        client._ec2_conn = fake
+        authorized = client.authorize(instance)
+        self.assertTrue(authorized)
+        authorization_string = "cidr_ip=%s/32 from_port=%s group_name=default ip_protocol=tcp to_port=%s" % (
+            instance.host,
+            instance.port,
+            instance.port,
+        )
+        self.assertIn(authorization_string, fake.authorizations)
+
+    def test_authorize_should_return_False_if_it_fails_to_authorize(self):
+        instance = Instance(name="semblance_of_liberty", ec2_id="i-022")
+        client = Client()
+        client._ec2_conn = mocks.FailingEC2Conn()
+        authorized = client.authorize(instance)
+        self.assertFalse(authorized)
+
+    def test_authorize_should_return_False_when_ec2_conn_raises_exception(self):
+        def fail_to_authorize(*args, **kwargs):
+            raise EC2ResponseError(status=500, reason="I've failed, my friend")
+        instance = Instance(name="semblance_of_liberty", ec2_id="i-022")
+        client = Client()
+        client._ec2_conn = mocks.FakeEC2Conn()
+        client._ec2_conn.authorize_security_group = fail_to_authorize
+        authorized = client.authorize(instance)
+        self.assertFalse(authorized)
+
+    def test_authorize_should_log_exceptions_from_ec2_conn(self):
+        def fail_to_authorize(*args, **kwargs):
+            raise EC2ResponseError(status=500, reason="I've failed, my friend")
+        err = self.mocker.replace("logging.error")
+        err("500 - I've failed, my friend")
+        self.mocker.result(None)
+        self.mocker.replay()
+        instance = Instance(name="semblance_of_liberty", ec2_id="i-022")
+        client = Client()
+        client._ec2_conn = mocks.FakeEC2Conn()
+        client._ec2_conn.authorize_security_group = fail_to_authorize
+        client.authorize(instance)
         self.mocker.verify()

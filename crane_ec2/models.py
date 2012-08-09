@@ -62,3 +62,17 @@ class Client(object):
             return False
         logging.error("Instance %s not found." % instance.ec2_id)
         return False
+
+    def authorize(self, instance):
+        # FIXME (fsouza): support other groups than default; udp services and multi-port services.
+        try:
+            return self.ec2_conn.authorize_security_group(
+                group_name="default",
+                ip_protocol="tcp",
+                cidr_ip="%s/32" % (instance.host),
+                from_port=instance.port,
+                to_port=instance.port,
+            )
+        except EC2ResponseError as exc:
+            logging.error("%s - %s" % (exc.status, exc.reason))
+            return False
