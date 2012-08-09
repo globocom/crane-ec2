@@ -27,6 +27,7 @@ def build_running_reservations(instance_id):
 class FakeEC2Conn(object):
 
     def __init__(self, times_to_fail=1, *args, **kwargs):
+        self.authorizations = []
         self.instances = []
         self.terminated = []
         self.args = args
@@ -61,6 +62,18 @@ class FakeEC2Conn(object):
             return build_pending_reservations(instance_ids[0])
         return build_running_reservations(instance_ids[0])
 
+    def _build_authorization_string(self, kw):
+        items = ["%s=%s" % (k, v) for k, v in kw.iteritems()]
+        return " ".join(sorted(items))
+
+    def authorize_security_group(self, *args, **kwargs):
+        self.authorizations.append(self._build_authorization_string(kwargs))
+        return True
+
+    def revoke_security_group(self, *args, **kwargs):
+        self.authorizations.remove(self._build_authorization_string(kwargs))
+        return True
+
 
 class FailingEC2Conn(FakeEC2Conn):
 
@@ -72,3 +85,9 @@ class FailingEC2Conn(FakeEC2Conn):
 
     def get_all_instances(self, *args, **kwargs):
         return []
+
+    def authorize_security_group(self, *args, **kwargs):
+        return False
+
+    def revoke_security_group(self, *args, **kwargs):
+        return False
