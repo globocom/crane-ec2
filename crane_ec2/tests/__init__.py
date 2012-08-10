@@ -168,7 +168,7 @@ class EC2ClientTestCase(mocker.MockerTestCase):
     def test_get_instance_should_log_instance_not_running_yet_with_notice(self):
         instance = Instance(name="good_news_first", ec2_id="i-00000302")
         info = self.mocker.replace("logging.info")
-        info("Instance not updated. State: running, IP: 172.16.52.10.")
+        info("Instance i-00000302 not updated. State: running, IP: 172.16.52.10.")
         self.mocker.result(None)
         self.mocker.replay()
         client = Client()

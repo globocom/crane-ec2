@@ -58,7 +58,7 @@ class Client(object):
                 instance.state = ec2_instance.state
                 instance.host = ec2_instance.ip_address
                 return True
-            logging.info("Instance not updated. State: %s, IP: %s." % (ec2_instance.state, ec2_instance.ip_address))
+            logging.info("Instance %s not updated. State: %s, IP: %s." % (ec2_instance.id, ec2_instance.state, ec2_instance.ip_address))
             return False
         logging.error("Instance %s not found." % instance.ec2_id)
         return False
